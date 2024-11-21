@@ -105,7 +105,10 @@ class CreditScorePredictor:
         self.df['Credit_Mix'][self.df['Credit_Mix'] == '_'] = np.nan
         self.df['Credit_Mix'] = self.df.groupby('Customer_ID')['Credit_Mix'].fillna(method='ffill').fillna(method='bfill').astype("string")
 
+        self.df['Outstanding_Debt'][~df['Outstanding_Debt'].str.fullmatch('([0-9]*[.])?[0-9]+')].unique()
+        
         self.df['Credit_Score'] = self.df['Credit_Score'].astype("string")
+
         
         # Drop Customer_ID and encode categorical features
         self.df = self.df.drop(columns='Customer_ID')
