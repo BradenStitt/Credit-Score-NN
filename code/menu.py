@@ -109,7 +109,7 @@ class CreditScorePredictor:
 
         self.df['Outstanding_Debt'] = self.df['Outstanding_Debt'].str.replace('_', '').astype(float)
         self.df['Outstanding_Debt'][self.df['Outstanding_Debt'].str.fullmatch('([0-9]*[.])?[0-9]+')].unique()
-        self.df['Outstanding_Debt'] = self.df.groupby('Customer_ID')['Outstanding_Debt'].fillna(method='ffill').fillna(method='bfill')
+        self.df['Outstanding_Debt'] = self.df.groupby('Customer_ID')['Outstanding_Debt'].fillna(method='ffill').fillna(method='bfill').astype(float)
         
         self.df['Credit_Score'] = self.df['Credit_Score'].astype("string")
 
