@@ -75,10 +75,12 @@ class CreditScorePredictor:
         # Data cleaning steps from original script
         columns_to_drop_unrelated = ['Unnamed: 0', 'Month', 'Name', 'SSN']
         columns_to_drop_not_used = ['Num_Bank_Accounts', 'Num_of_Loan', 'Type_of_Loan', 'Delay_from_due_date', 
-                                    'Num_of_Delayed_Payment', 'Changed_Credit_Limit', 'Outstanding_Debt', 
+                                    'Num_of_Delayed_Payment', 'Changed_Credit_Limit', 
                                     'Payment_of_Min_Amount', 'Num_Credit_Inquiries', 'Total_EMI_per_month', 
                                     'Amount_invested_monthly', 'Credit_History_Age', 'Monthly_Balance', 
                                     'Payment_Behaviour']
+        # input but not 100% sure if done correctly
+        # 'Outstanding_Debt'
         
         self.df.drop(columns=columns_to_drop_unrelated + columns_to_drop_not_used, inplace=True)
         
@@ -107,6 +109,7 @@ class CreditScorePredictor:
 
         self.df['Outstanding_Debt'] = self.df['Outstanding_Debt'].str.replace('_', '').astype(float)
         self.df['Outstanding_Debt'][self.df['Outstanding_Debt'].str.fullmatch('([0-9]*[.])?[0-9]+')].unique()
+        self.df['Outstanding_Debt'] = self.df.groupby('Customer_ID')['Outstanding_Debt'].fillna(method='ffill').fillna(method='bfill')
         
         self.df['Credit_Score'] = self.df['Credit_Score'].astype("string")
 
