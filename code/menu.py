@@ -107,9 +107,9 @@ class CreditScorePredictor:
         self.df['Credit_Mix'][self.df['Credit_Mix'] == '_'] = np.nan
         self.df['Credit_Mix'] = self.df.groupby('Customer_ID')['Credit_Mix'].fillna(method='ffill').fillna(method='bfill').astype("string")
 
-#        self.df['Outstanding_Debt'] = self.df['Outstanding_Debt'].str.replace('_', '')
-#        self.df['Outstanding_Debt'][self.df['Outstanding_Debt'].str.fullmatch('([0-9]*[.])?[0-9]+')].unique()
-#        self.df['Outstanding_Debt'] = self.df.groupby('Customer_ID')['Outstanding_Debt'].fillna(method='ffill').fillna(method='bfill').astype(float)
+        self.df['Outstanding_Debt'] = self.df['Outstanding_Debt'].str.replace('_', '')
+        self.df['Outstanding_Debt'][self.df['Outstanding_Debt'].str.fullmatch('([0-9]*[.])?[0-9]+')].unique()
+        self.df['Outstanding_Debt'] = self.df.groupby('Customer_ID')['Outstanding_Debt'].fillna(method='ffill').fillna(method='bfill').astype(float)
         
         self.df['Credit_Score'] = self.df['Credit_Score'].astype("string")
 
