@@ -126,10 +126,10 @@ class CreditScorePredictor:
 
         self.df['Payment_of_Min_Amount'][self.df['Payment_of_Min_Amount'] == 'NM'] = np.nan
         self.df['Payment_of_Min_Amount'] = self.df.groupby('Customer_ID')['Payment_of_Min_Amount'].fillna(method='ffill').fillna(method='bfill').astype("string")
-
-        self.df['Credit_History_Age'] = self.df['Credit_History_Age'].str.replace('Years', '')
-        self.df['Credit_History_Age'] = self.df['Credit_History_Age'].str.replace('Months', '')
-        self.df['Credit_History_Age'] = self.df['Credit_History_Age'].str.replace('and', '')
+        
+        self.df[['Years', 'Months']] = self.df['Credit_History_Age'].str.extract('(?P<Years>\d+) Years and (?P<Months>\d+) Months').astype(float)
+        self.df['Credit_History_Age'] = self.df['Years'] * 12 + self.df['Months']
+        self.df.drop(columns=['Years', 'Months'], inplace=True)
         self.df['Credit_History_Age'] = self.df.groupby('Customer_ID')['Credit_History_Age'].fillna(method='ffill').fillna(method='bfill')
 
         self.df['Payment_Behaviour'][self.df['Payment_Behaviour'] == '!@9#%8'] = np.nan
