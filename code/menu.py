@@ -75,13 +75,16 @@ class CreditScorePredictor:
         # Data cleaning steps from original script
         columns_to_drop_unrelated = ['Unnamed: 0', 'Month', 'Name', 'SSN']
         columns_to_drop_not_used = ['Num_Bank_Accounts', 'Num_of_Loan', 'Type_of_Loan', 'Delay_from_due_date',  
-                                    'Payment_of_Min_Amount', 'Num_Credit_Inquiries', 'Total_EMI_per_month', 
-                                    'Amount_invested_monthly', 'Credit_History_Age', 'Monthly_Balance', 
-                                    'Payment_Behaviour']
+                                    'Num_Credit_Inquiries', 'Total_EMI_per_month', 'Amount_invested_monthly']
         # input but not 100% sure if done correctly
         # 'Outstanding_Debt'
         # 'Changed_Credit_Limit'
         # 'Num_of_Delayed_Payment'
+    
+        # 'Payment_of_Min_Amount'
+        # 'Credit_History_Age'
+        # 'Monthly_Balance'
+        # 'Payment_Behaviour
         
         self.df.drop(columns=columns_to_drop_unrelated + columns_to_drop_not_used, inplace=True)
         
@@ -120,6 +123,20 @@ class CreditScorePredictor:
         temp_series[~temp_series.str.isnumeric()].unique()
         self.df['Num_of_Delayed_Payment'] = self.df['Num_of_Delayed_Payment'].str.replace('_', '').astype(float)
         self.df['Num_of_Delayed_Payment'] = self.df.groupby('Customer_ID')['Num_of_Delayed_Payment'].fillna(method='ffill').fillna(method='bfill').astype(float)
+
+        self.df['Payment_of_Min_Amount'][self.df['Payment_of_Min_Amount'] == 'NM'] = np.nan
+        self.df['Payment_of_Min_Amount'] = self.df.groupby('Customer_ID')['Payment_of_Min_Amount'].fillna(method='ffill').fillna(method='bfill').astype("string")
+
+        self.df['Credit_History_Age'] = self.df['Credit_History_Age'].str.replace('Years', '')
+        self.df['Credit_History_Age'] = self.df['Credit_History_Age'].str.replace('Months', '')
+        self.df['Credit_History_Age'] = self.df['Credit_History_Age'].str.replace('and', '')
+        self.df['Credit_History_Age'] = self.df.groupby('Customer_ID')['Credit_History_Age'].fillna(method='ffill').fillna(method='bfill')
+
+        self.df['Payment_Behaviour'][self.df['Payment_Behaviour'] == '!@9#%8'] = np.nan
+        self.df['Payment_Behaviour'] = self.df.groupby('Customer_ID')['Payment_Behaviour'].fillna(method='ffill').fillna(method='bfill').astype("string")
+
+        self.df['Monthly_Balance'] = self.df.groupby('Customer_ID')['Monthly_Balance'].fillna(method='ffill').fillna(method='bfill') 
+
         
         self.df['Credit_Score'] = self.df['Credit_Score'].astype("string")
 
