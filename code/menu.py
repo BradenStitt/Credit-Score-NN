@@ -74,13 +74,14 @@ class CreditScorePredictor:
         
         # Data cleaning steps from original script
         columns_to_drop_unrelated = ['Unnamed: 0', 'Month', 'Name', 'SSN']
-        columns_to_drop_not_used = ['Num_Bank_Accounts', 'Num_of_Loan', 'Type_of_Loan', 'Delay_from_due_date', 
-                                    'Num_of_Delayed_Payment', 'Changed_Credit_Limit', 
+        columns_to_drop_not_used = ['Num_Bank_Accounts', 'Num_of_Loan', 'Type_of_Loan', 'Delay_from_due_date',  
                                     'Payment_of_Min_Amount', 'Num_Credit_Inquiries', 'Total_EMI_per_month', 
                                     'Amount_invested_monthly', 'Credit_History_Age', 'Monthly_Balance', 
                                     'Payment_Behaviour']
         # input but not 100% sure if done correctly
         # 'Outstanding_Debt'
+        # 'Changed_Credit_Limit'
+        # 'Num_of_Delayed_Payment'
         
         self.df.drop(columns=columns_to_drop_unrelated + columns_to_drop_not_used, inplace=True)
         
@@ -110,6 +111,15 @@ class CreditScorePredictor:
         self.df['Outstanding_Debt'] = self.df['Outstanding_Debt'].str.replace('_', '')
         self.df['Outstanding_Debt'][self.df['Outstanding_Debt'].str.fullmatch('([0-9]*[.])?[0-9]+')].unique()
         self.df['Outstanding_Debt'] = self.df.groupby('Customer_ID')['Outstanding_Debt'].fillna(method='ffill').fillna(method='bfill').astype(float)
+
+        self.df['Changed_Credit_Limit'][self.df['Changed_Credit_Limit'].str.fullmatch('[+-]?([0-9]*[.])?[0-9]+')].unique()
+        self.df['Changed_Credit_Limit'][self.df['Changed_Credit_Limit'] == '_'] = np.nan 
+        self.df['Changed_Credit_Limit'] = self.df.groupby('Customer_ID')['Changed_Credit_Limit'].fillna(method='ffill').fillna(method='bfill').astype(float)
+
+        temp_series = self.df['Num_of_Delayed_Payment'][self.df['Num_of_Delayed_Payment'].notnull()]
+        temp_series[~temp_series.str.isnumeric()].unique()
+        self.df['Num_of_Delayed_Payment'] = self.df['Num_of_Delayed_Payment'].str.replace('_', '').astype(float)
+        self.df['Num_of_Delayed_Payment'] = self.df.groupby('Customer_ID')['Num_of_Delayed_Payment'].fillna(method='ffill').fillna(method='bfill').astype(float)
         
         self.df['Credit_Score'] = self.df['Credit_Score'].astype("string")
 
