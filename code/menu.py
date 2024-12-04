@@ -58,7 +58,18 @@ class CreditScorePredictor:
             print(f"{i+1}. {file}")
         
 
-        choice = int(input("Enter the number of the file you want to load: "))
+        choice = input("Enter the number of the file you want to load: ")
+
+        try:
+            choice = int(choice)
+        except ValueError:
+            print("Invalid choice. Please try again.")
+            return
+
+        if choice < 1 or choice > len(files):
+            print("Invalid choice. Please try again.")
+            return
+        
         file_path = os.path.join(data_dir, files[choice-1])
         try:
             self.df = pd.read_csv(file_path)
@@ -112,56 +123,100 @@ class CreditScorePredictor:
         self.df.drop(columns=columns_to_drop_unrelated + columns_to_drop_not_used, inplace=True)
         
         # Clean specific columns
-        self.df['Age'] = self.df['Age'].str.replace('_', '').astype(int)
+        try:
+            self.df['Age'] = self.df['Age'].str.replace('_', '').astype(int)
+        except ValueError:
+            self.df['Age'] = pd.to_numeric(self.df['Age'], errors='coerce')
         self.df['Age'][(self.df['Age'] > 100) | (self.df['Age'] <= 0)] = np.nan
         self.df['Age'] = self.df.groupby('Customer_ID')['Age'].fillna(method='ffill').fillna(method='bfill').astype(int)
 
-        self.df['Occupation'][self.df['Occupation'] == '_______'] = np.nan
-        self.df['Occupation'] = self.df.groupby('Customer_ID')['Occupation'].fillna(method='ffill').fillna(method='bfill').astype("string")
+        try:
+            self.df['Occupation'][self.df['Occupation'] == '_______'] = np.nan
+            self.df['Occupation'] = self.df.groupby('Customer_ID')['Occupation'].fillna(method='ffill').fillna(method='bfill').astype("string")
+        except Exception as e:
+            print(f"Error processing 'Occupation': {e}")
 
-        self.df['Annual_Income'] = self.df['Annual_Income'].str.replace('_', '').astype(float)
-        self.df.loc[self.df['Annual_Income'] > 180000, 'Annual_Income'] = pd.NA
-        self.df['Annual_Income'] = self.df.groupby('Customer_ID')['Annual_Income'].fillna(method='ffill').fillna(method='bfill')
+        try:
+            self.df['Annual_Income'] = self.df['Annual_Income'].str.replace('_', '').astype(float)
+            self.df.loc[self.df['Annual_Income'] > 180000, 'Annual_Income'] = pd.NA
+            self.df['Annual_Income'] = self.df.groupby('Customer_ID')['Annual_Income'].fillna(method='ffill').fillna(method='bfill')
+        except Exception as e:
+            print(f"Error processing 'Annual_Income': {e}")
 
-        self.df['Monthly_Inhand_Salary'] = self.df.groupby('Customer_ID')['Monthly_Inhand_Salary'].fillna(method='ffill').fillna(method='bfill')
+        try:
+            self.df['Monthly_Inhand_Salary'] = self.df.groupby('Customer_ID')['Monthly_Inhand_Salary'].fillna(method='ffill').fillna(method='bfill')
+        except Exception as e:
+            print(f"Error processing 'Monthly_Inhand_Salary': {e}")
 
-        self.df.loc[self.df['Num_Credit_Card'] > 11, 'Num_Credit_Card'] = pd.NA
-        self.df['Num_Credit_Card'] = self.df.groupby('Customer_ID')['Num_Credit_Card'].fillna(method='ffill').fillna(method='bfill')
+        try:
+            self.df.loc[self.df['Num_Credit_Card'] > 11, 'Num_Credit_Card'] = pd.NA
+            self.df['Num_Credit_Card'] = self.df.groupby('Customer_ID')['Num_Credit_Card'].fillna(method='ffill').fillna(method='bfill')
+        except Exception as e:
+            print(f"Error processing 'Num_Credit_Card': {e}")
 
-        self.df.loc[self.df['Interest_Rate'] > 34, 'Interest_Rate'] = pd.NA
-        self.df['Interest_Rate'] = self.df.groupby('Customer_ID')['Interest_Rate'].transform(lambda x: x.median())
+        try:
+            self.df.loc[self.df['Interest_Rate'] > 34, 'Interest_Rate'] = pd.NA
+            self.df['Interest_Rate'] = self.df.groupby('Customer_ID')['Interest_Rate'].transform(lambda x: x.median())
+        except Exception as e:
+            print(f"Error processing 'Interest_Rate': {e}")
 
-        self.df['Credit_Mix'][self.df['Credit_Mix'] == '_'] = np.nan
-        self.df['Credit_Mix'] = self.df.groupby('Customer_ID')['Credit_Mix'].fillna(method='ffill').fillna(method='bfill').astype("string")
+        try:
+            self.df['Credit_Mix'][self.df['Credit_Mix'] == '_'] = np.nan
+            self.df['Credit_Mix'] = self.df.groupby('Customer_ID')['Credit_Mix'].fillna(method='ffill').fillna(method='bfill').astype("string")
+        except Exception as e:
+            print(f"Error processing 'Credit_Mix': {e}")
 
-        self.df['Outstanding_Debt'] = self.df['Outstanding_Debt'].str.replace('_', '')
-        self.df['Outstanding_Debt'][self.df['Outstanding_Debt'].str.fullmatch('([0-9]*[.])?[0-9]+')].unique()
-        self.df['Outstanding_Debt'] = self.df.groupby('Customer_ID')['Outstanding_Debt'].fillna(method='ffill').fillna(method='bfill').astype(float)
+        try:
+            self.df['Outstanding_Debt'] = self.df['Outstanding_Debt'].str.replace('_', '')
+            self.df['Outstanding_Debt'][self.df['Outstanding_Debt'].str.fullmatch('([0-9]*[.])?[0-9]+')].unique()
+            self.df['Outstanding_Debt'] = self.df.groupby('Customer_ID')['Outstanding_Debt'].fillna(method='ffill').fillna(method='bfill').astype(float)
+        except Exception as e:
+            print(f"Error processing 'Outstanding_Debt': {e}")
 
-        self.df['Changed_Credit_Limit'][self.df['Changed_Credit_Limit'].str.fullmatch('[+-]?([0-9]*[.])?[0-9]+')].unique()
-        self.df['Changed_Credit_Limit'][self.df['Changed_Credit_Limit'] == '_'] = np.nan 
-        self.df['Changed_Credit_Limit'] = self.df.groupby('Customer_ID')['Changed_Credit_Limit'].fillna(method='ffill').fillna(method='bfill').astype(float)
+        try:
+            self.df['Changed_Credit_Limit'][self.df['Changed_Credit_Limit'].str.fullmatch('[+-]?([0-9]*[.])?[0-9]+')].unique()
+            self.df['Changed_Credit_Limit'][self.df['Changed_Credit_Limit'] == '_'] = np.nan 
+            self.df['Changed_Credit_Limit'] = self.df.groupby('Customer_ID')['Changed_Credit_Limit'].fillna(method='ffill').fillna(method='bfill').astype(float)
+        except Exception as e:
+            print(f"Error processing 'Changed_Credit_Limit': {e}")
 
-        temp_series = self.df['Num_of_Delayed_Payment'][self.df['Num_of_Delayed_Payment'].notnull()]
-        temp_series[~temp_series.str.isnumeric()].unique()
-        self.df['Num_of_Delayed_Payment'] = self.df['Num_of_Delayed_Payment'].str.replace('_', '').astype(float)
-        self.df['Num_of_Delayed_Payment'] = self.df.groupby('Customer_ID')['Num_of_Delayed_Payment'].fillna(method='ffill').fillna(method='bfill').astype(float)
+        try:
+            temp_series = self.df['Num_of_Delayed_Payment'][self.df['Num_of_Delayed_Payment'].notnull()]
+            temp_series[~temp_series.str.isnumeric()].unique()
+            self.df['Num_of_Delayed_Payment'] = self.df['Num_of_Delayed_Payment'].str.replace('_', '').astype(float)
+            self.df['Num_of_Delayed_Payment'] = self.df.groupby('Customer_ID')['Num_of_Delayed_Payment'].fillna(method='ffill').fillna(method='bfill').astype(float)
+        except Exception as e:
+            print(f"Error processing 'Num_of_Delayed_Payment': {e}")
 
-        self.df['Payment_of_Min_Amount'][self.df['Payment_of_Min_Amount'] == 'NM'] = np.nan
-        self.df['Payment_of_Min_Amount'] = self.df.groupby('Customer_ID')['Payment_of_Min_Amount'].fillna(method='ffill').fillna(method='bfill').astype("string")
-        
-        self.df[['Years', 'Months']] = self.df['Credit_History_Age'].str.extract('(?P<Years>\d+) Years and (?P<Months>\d+) Months').astype(float)
-        self.df['Credit_History_Age'] = self.df['Years'] * 12 + self.df['Months']
-        self.df.drop(columns=['Years', 'Months'], inplace=True)
-        self.df['Credit_History_Age'] = self.df.groupby('Customer_ID')['Credit_History_Age'].fillna(method='ffill').fillna(method='bfill')
+        try:
+            self.df['Payment_of_Min_Amount'][self.df['Payment_of_Min_Amount'] == 'NM'] = np.nan
+            self.df['Payment_of_Min_Amount'] = self.df.groupby('Customer_ID')['Payment_of_Min_Amount'].fillna(method='ffill').fillna(method='bfill').astype("string")
+        except Exception as e:
+            print(f"Error processing 'Payment_of_Min_Amount': {e}")
 
-        self.df['Payment_Behaviour'][self.df['Payment_Behaviour'] == '!@9#%8'] = np.nan
-        self.df['Payment_Behaviour'] = self.df.groupby('Customer_ID')['Payment_Behaviour'].fillna(method='ffill').fillna(method='bfill').astype("string")
+        try:
+            self.df[['Years', 'Months']] = self.df['Credit_History_Age'].str.extract('(?P<Years>\d+) Years and (?P<Months>\d+) Months').astype(float)
+            self.df['Credit_History_Age'] = self.df['Years'] * 12 + self.df['Months']
+            self.df.drop(columns=['Years', 'Months'], inplace=True)
+            self.df['Credit_History_Age'] = self.df.groupby('Customer_ID')['Credit_History_Age'].fillna(method='ffill').fillna(method='bfill')
+        except Exception as e:
+            print(f"Error processing 'Credit_History_Age': {e}")
 
-        self.df['Monthly_Balance'] = self.df.groupby('Customer_ID')['Monthly_Balance'].fillna(method='ffill').fillna(method='bfill') 
+        try:
+            self.df['Payment_Behaviour'][self.df['Payment_Behaviour'] == '!@9#%8'] = np.nan
+            self.df['Payment_Behaviour'] = self.df.groupby('Customer_ID')['Payment_Behaviour'].fillna(method='ffill').fillna(method='bfill').astype("string")
+        except Exception as e:
+            print(f"Error processing 'Payment_Behaviour': {e}")
 
-        
-        self.df['Credit_Score'] = self.df['Credit_Score'].astype("string")
+        try:
+            self.df['Monthly_Balance'] = self.df.groupby('Customer_ID')['Monthly_Balance'].fillna(method='ffill').fillna(method='bfill')
+        except Exception as e:
+            print(f"Error processing 'Monthly_Balance': {e}")
+
+        try:
+            self.df['Credit_Score'] = self.df['Credit_Score'].astype("string")
+        except Exception as e:
+            print(f"Error processing 'Credit_Score': {e}")
 
         
         # Drop Customer_ID and encode categorical features
@@ -285,7 +340,12 @@ def main():
             except Exception as e:
                 print(f"An error occurred: {e}")
         elif choice == '2':
-            predictor.process_data()
+            try:
+                predictor.process_data()
+            except Exception as e:
+                print(f"An error occurred: {e}")
+                print("Unloading Data...")
+                predictor.df = None
         elif choice == '3':
             predictor.build_model()
         elif choice == '4':
