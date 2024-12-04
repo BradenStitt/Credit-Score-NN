@@ -51,7 +51,7 @@ class CreditScorePredictor:
 
         data_dir = os.path.join(parent_dir, 'data')
         for filename in os.listdir(data_dir):
-            if os.path.isfile(os.path.join(data_dir, filename)):
+            if os.path.isfile(os.path.join(data_dir, filename)) and filename.endswith('.csv'):
                 files.append(filename)
 
         for i, file in enumerate(files):
