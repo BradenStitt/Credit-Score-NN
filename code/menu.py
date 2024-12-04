@@ -57,14 +57,25 @@ class CreditScorePredictor:
         for i, file in enumerate(files):
             print(f"{i+1}. {file}")
         
+
         choice = int(input("Enter the number of the file you want to load: "))
         file_path = os.path.join(data_dir, files[choice-1])
-        
-        self.df = pd.read_csv(file_path)
+        try:
+            self.df = pd.read_csv(file_path)
+        except Exception as e:
+            print(f"An error occurred while loading the data: {e}")
+            return
         
         print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Starting Script")
         print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Loading training data set")
         
+
+        ## THIS IS WHERE PROBLEMS MAY ARISE
+
+        if (self.df.columns == ['Customer_ID', 'ID', 'Age', 'Occupation', 'Annual_Income', 'Monthly_Inhand_Salary', 'Num_Credit_Card', 'Interest_Rate', 'Credit_Mix', 'Outstanding_Debt', 'Changed_Credit_Limit', 'Num_of_Delayed_Payment', 'Payment_of_Min_Amount', 'Credit_History_Age', 'Monthly_Balance', 'Payment_Behaviour', 'Credit_Score']).all():
+            print("Data loaded successfully!")
+        else:
+            raise ValueError("Data columns do not match expected columns")
         total_columns = len(self.df.columns)
         total_rows = len(self.df)
         
@@ -269,7 +280,10 @@ def main():
         choice = input("Enter your choice (1-5): ")
         
         if choice == '1':
-            predictor.load_data()
+            try:
+                predictor.load_data()
+            except Exception as e:
+                print(f"An error occurred: {e}")
         elif choice == '2':
             predictor.process_data()
         elif choice == '3':
