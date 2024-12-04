@@ -48,8 +48,22 @@ class CreditScorePredictor:
         
         # Load the data
         current_dir = os.getcwd()
-        #parent_dir = os.path.dirname(current_dir)
-        file_path = os.path.join(current_dir, "credit_score_data.csv")
+
+        parent_dir = os.path.dirname(current_dir)
+        files = []
+
+
+        data_dir = os.path.join(parent_dir, 'data')
+        for filename in os.listdir(data_dir):
+            if os.path.isfile(os.path.join(data_dir, filename)):
+                files.append(filename)
+
+        for i, file in enumerate(files):
+            print(f"{i+1}. {file}")
+        
+        choice = int(input("Enter the number of the file you want to load: "))
+        file_path = os.path.join(data_dir, files[choice-1])
+
         
         self.df = pd.read_csv(file_path)
         
@@ -181,7 +195,7 @@ class CreditScorePredictor:
         print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Model Architecture Created")
         print("Hyper-parameters used are:")
         print("- Input Layer: 24 nodes")
-        print("- Hidden Layers: 48, 96, 96, 48 nodes")
+        print("- Hidden Layers: 72, 216, 216, 72 nodes")
         print("- Output Layer: 3 nodes (softmax)")
         print("- Loss Function: Categorical Cross-Entropy")
         print("- Test Size: 20%")
