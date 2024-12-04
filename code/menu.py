@@ -46,7 +46,19 @@ class CreditScorePredictor:
         # Load the data
         current_dir = os.getcwd()
         parent_dir = os.path.dirname(current_dir)
-        file_path = os.path.join(parent_dir, "data\credit_score_data.csv")
+        files = []
+
+
+        data_dir = os.path.join(parent_dir, 'data')
+        for filename in os.listdir(data_dir):
+            if os.path.isfile(os.path.join(data_dir, filename)):
+                files.append(filename)
+
+        for i, file in enumerate(files):
+            print(f"{i+1}. {file}")
+        
+        choice = int(input("Enter the number of the file you want to load: "))
+        file_path = os.path.join(data_dir, files[choice-1])
         
         self.df = pd.read_csv(file_path)
         
