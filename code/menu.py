@@ -69,15 +69,15 @@ class CreditScorePredictor:
         print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Starting Script")
         print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Loading training data set")
         
-
-        ## THIS IS WHERE PROBLEMS MAY ARISE
-
-        if (self.df.columns == ['Customer_ID', 'ID', 'Age', 'Occupation', 'Annual_Income', 'Monthly_Inhand_Salary', 'Num_Credit_Card', 'Interest_Rate', 'Credit_Mix', 'Outstanding_Debt', 'Changed_Credit_Limit', 'Num_of_Delayed_Payment', 'Payment_of_Min_Amount', 'Credit_History_Age', 'Monthly_Balance', 'Payment_Behaviour', 'Credit_Score']).all():
-            print("Data loaded successfully!")
-        else:
-            raise ValueError("Data columns do not match expected columns")
         total_columns = len(self.df.columns)
+        if len(self.df.columns) != 29:
+            self.df = None
+            raise ValueError("Data columns do not match expected columns: " + str(total_columns))
         total_rows = len(self.df)
+
+        if total_rows < 90:
+            self.df = None
+            raise ValueError("No/Insufficient data in the file: " + str(total_rows))
         
         print(f"Total Columns Read: {total_columns}")
         print(f"Total Rows Read: {total_rows}")
