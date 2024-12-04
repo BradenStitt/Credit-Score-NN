@@ -12,7 +12,7 @@ warnings.filterwarnings('ignore')
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import OneHotEncoder, LabelEncoder
+from sklearn.preprocessing import OneHotEncoder, LabelEncoder, MinMaxScaler, StandardScaler
 
 import tensorflow as tf
 from tensorflow import keras
@@ -34,9 +34,12 @@ class CreditScorePredictor:
         self.X_test = None
         self.y_train = None 
         self.y_test = None
-        self.model = None
+        self.model = None         
+        self.cat_encoder = OneHotEncoder(handle_unknown='ignore')  # for features
+        self.target_encoder = OneHotEncoder(handle_unknown='ignore')  # for target
         self.encoder = OneHotEncoder(handle_unknown='ignore')
         self.le = LabelEncoder()
+        self.scaler = StandardScaler()  # Added a scaler for numerical features
         self.start_time = None
 
     def load_data(self):
@@ -45,6 +48,7 @@ class CreditScorePredictor:
         
         # Load the data
         current_dir = os.getcwd()
+
         parent_dir = os.path.dirname(current_dir)
         files = []
 
@@ -59,6 +63,7 @@ class CreditScorePredictor:
         
         choice = int(input("Enter the number of the file you want to load: "))
         file_path = os.path.join(data_dir, files[choice-1])
+
         
         self.df = pd.read_csv(file_path)
         
@@ -83,52 +88,34 @@ class CreditScorePredictor:
         self.start_time = time.time()
         
         print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Performing Data Clean Up")
-        
-        # Data cleaning steps from original script
-        columns_to_drop_unrelated = ['Unnamed: 0', 'Month', 'Name', 'SSN']
-        columns_to_drop_not_used = ['Num_Bank_Accounts', 'Num_of_Loan', 'Type_of_Loan', 'Delay_from_due_date',  
-                                    'Num_Credit_Inquiries', 'Total_EMI_per_month', 'Amount_invested_monthly']
-        # input but not 100% sure if done correctly
-        # 'Outstanding_Debt'
-        # 'Changed_Credit_Limit'
-        # 'Num_of_Delayed_Payment'
-    
-        # 'Payment_of_Min_Amount'
-        # 'Credit_History_Age'
-        # 'Monthly_Balance'
-        # 'Payment_Behaviour
-        
-        self.df.drop(columns=columns_to_drop_unrelated + columns_to_drop_not_used, inplace=True)
-        
-        # Clean specific columns
-        self.df['Age'] = self.df['Age'].str.replace('_', '').astype(int)
-        self.df['Age'][(self.df['Age'] > 100) | (self.df['Age'] <= 0)] = np.nan
-        self.df['Age'] = self.df.groupby('Customer_ID')['Age'].fillna(method='ffill').fillna(method='bfill').astype(int)
+        columns_to_drop = [
+            'Unnamed: 0', 'Month', 'Name', 'SSN',
+            'Num_Bank_Accounts', 'Num_of_Loan', 'Type_of_Loan', 
+            'Delay_from_due_date', 'Num_Credit_Inquiries', 
+            'Total_EMI_per_month', 'Amount_invested_monthly',
+            'Credit_History_Age'
+        ]
 
-        self.df['Occupation'][self.df['Occupation'] == '_______'] = np.nan
-        self.df['Occupation'] = self.df.groupby('Customer_ID')['Occupation'].fillna(method='ffill').fillna(method='bfill').astype("string")
-
+        self.df.drop(columns=columns_to_drop, inplace=True)
+        
+        
         self.df['Annual_Income'] = self.df['Annual_Income'].str.replace('_', '').astype(float)
         self.df.loc[self.df['Annual_Income'] > 180000, 'Annual_Income'] = pd.NA
         self.df['Annual_Income'] = self.df.groupby('Customer_ID')['Annual_Income'].fillna(method='ffill').fillna(method='bfill')
 
         self.df['Monthly_Inhand_Salary'] = self.df.groupby('Customer_ID')['Monthly_Inhand_Salary'].fillna(method='ffill').fillna(method='bfill')
 
-        self.df.loc[self.df['Num_Credit_Card'] > 11, 'Num_Credit_Card'] = pd.NA
-        self.df['Num_Credit_Card'] = self.df.groupby('Customer_ID')['Num_Credit_Card'].fillna(method='ffill').fillna(method='bfill')
-
+        
         self.df.loc[self.df['Interest_Rate'] > 34, 'Interest_Rate'] = pd.NA
-        self.df['Interest_Rate'] = self.df.groupby('Customer_ID')['Interest_Rate'].transform(lambda x: x.median())
-
-        self.df['Credit_Mix'][self.df['Credit_Mix'] == '_'] = np.nan
-        self.df['Credit_Mix'] = self.df.groupby('Customer_ID')['Credit_Mix'].fillna(method='ffill').fillna(method='bfill').astype("string")
+        self.df['Interest_Rate'] = self.df.groupby('Customer_ID')['Interest_Rate'].transform(lambda x: x.fillna(x.median()))
 
         self.df['Outstanding_Debt'] = self.df['Outstanding_Debt'].str.replace('_', '')
         self.df['Outstanding_Debt'][self.df['Outstanding_Debt'].str.fullmatch('([0-9]*[.])?[0-9]+')].unique()
         self.df['Outstanding_Debt'] = self.df.groupby('Customer_ID')['Outstanding_Debt'].fillna(method='ffill').fillna(method='bfill').astype(float)
+        
 
         self.df['Changed_Credit_Limit'][self.df['Changed_Credit_Limit'].str.fullmatch('[+-]?([0-9]*[.])?[0-9]+')].unique()
-        self.df['Changed_Credit_Limit'][self.df['Changed_Credit_Limit'] == '_'] = np.nan 
+        self.df['Changed_Credit_Limit'][self.df['Changed_Credit_Limit'] == '_'] = np.nan
         self.df['Changed_Credit_Limit'] = self.df.groupby('Customer_ID')['Changed_Credit_Limit'].fillna(method='ffill').fillna(method='bfill').astype(float)
 
         temp_series = self.df['Num_of_Delayed_Payment'][self.df['Num_of_Delayed_Payment'].notnull()]
@@ -136,30 +123,32 @@ class CreditScorePredictor:
         self.df['Num_of_Delayed_Payment'] = self.df['Num_of_Delayed_Payment'].str.replace('_', '').astype(float)
         self.df['Num_of_Delayed_Payment'] = self.df.groupby('Customer_ID')['Num_of_Delayed_Payment'].fillna(method='ffill').fillna(method='bfill').astype(float)
 
-        self.df['Payment_of_Min_Amount'][self.df['Payment_of_Min_Amount'] == 'NM'] = np.nan
-        self.df['Payment_of_Min_Amount'] = self.df.groupby('Customer_ID')['Payment_of_Min_Amount'].fillna(method='ffill').fillna(method='bfill').astype("string")
+
+        self.df['Monthly_Balance'] = pd.to_numeric(self.df['Monthly_Balance'], errors='coerce')
+        self.df['Monthly_Balance'] = self.df.groupby('Customer_ID')['Monthly_Balance'].transform(lambda x: x.fillna(method='ffill').fillna(method='bfill'))
+
         
-        self.df[['Years', 'Months']] = self.df['Credit_History_Age'].str.extract('(?P<Years>\d+) Years and (?P<Months>\d+) Months').astype(float)
-        self.df['Credit_History_Age'] = self.df['Years'] * 12 + self.df['Months']
-        self.df.drop(columns=['Years', 'Months'], inplace=True)
-        self.df['Credit_History_Age'] = self.df.groupby('Customer_ID')['Credit_History_Age'].fillna(method='ffill').fillna(method='bfill')
+        self.df['Occupation'][self.df['Occupation'] == '_______'] = np.nan
+        self.df['Occupation'] = self.df.groupby('Customer_ID')['Occupation'].fillna(method='ffill').fillna(method='bfill').astype("string")
+
+        
+        self.df['Credit_Mix'][self.df['Credit_Mix'] == '_'] = np.nan
+        self.df['Credit_Mix'] = self.df.groupby('Customer_ID')['Credit_Mix'].fillna(method='ffill').fillna(method='bfill').astype("string")
 
         self.df['Payment_Behaviour'][self.df['Payment_Behaviour'] == '!@9#%8'] = np.nan
         self.df['Payment_Behaviour'] = self.df.groupby('Customer_ID')['Payment_Behaviour'].fillna(method='ffill').fillna(method='bfill').astype("string")
 
-        self.df['Monthly_Balance'] = self.df.groupby('Customer_ID')['Monthly_Balance'].fillna(method='ffill').fillna(method='bfill') 
+        #affects how much disposable income someone actually has access to each month        
+        self.df['Income_to_Salary'] = self.df['Annual_Income'] / (self.df['Monthly_Inhand_Salary'] * 12)
 
-        
         self.df['Credit_Score'] = self.df['Credit_Score'].astype("string")
 
-        
-        # Drop Customer_ID and encode categorical features
         self.df = self.df.drop(columns='Customer_ID')
         self.df['ID'] = self.df['ID'].astype('string')
         
         total_rows_after_cleaning = len(self.df)
         process_time = time.time() - self.start_time
-        
+
         print(f"Total Rows after cleaning is: {total_rows_after_cleaning}")
         print(f"Time to process is: {process_time:.2f} seconds")
 
@@ -170,40 +159,43 @@ class CreditScorePredictor:
         
         print("\nBuilding Model: ***********************")
         
-        # Prepare features and target
         categorical_features = ['Occupation', 'Credit_Mix']
+        numerical_features = ['Annual_Income', 'Monthly_Inhand_Salary', 'Interest_Rate','Income_to_Salary', 
+                            'Outstanding_Debt', 'Monthly_Balance'
+                            ]
         target = ['Credit_Score']
-        
-        # Encode categorical features
-        encoded_features = self.encoder.fit_transform(self.df[categorical_features])
-        encoded_df = pd.DataFrame(encoded_features.toarray(), columns=self.encoder.get_feature_names_out(categorical_features))
-        
-        # Prepare features and target
-        self.X = encoded_features.toarray()
-        self.y = self.encoder.fit_transform(self.df[target]).toarray()
-        
-        # Train/test split
+
+        #added scaling here
+        numerical_features_scaled = self.scaler.fit_transform(self.df[numerical_features])
+        categorical_features_scaled = self.cat_encoder.fit_transform(self.df[categorical_features]).toarray()
+    
+        self.X = np.hstack([numerical_features_scaled, categorical_features_scaled])
+    
+        self.y = self.target_encoder.fit_transform(self.df[target]).toarray()
+
         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.X, self.y, test_size=0.20, random_state=42)
         
-        # Build Neural Network
         self.model = keras.Sequential([
             keras.layers.Dense(24, input_dim=self.X_train.shape[1], activation='relu'),
-            keras.layers.Dense(48, activation="relu"),
-            keras.layers.Dense(96, activation="relu"),
-            keras.layers.Dense(96, activation="relu"),
-            keras.layers.Dense(48, activation="relu"),
+            keras.layers.Dense(72, activation="relu"),
+            keras.layers.Dense(216, activation="relu"),
+            keras.layers.Dense(216, activation="relu"),
+            keras.layers.Dense(72, activation="relu"),
             keras.layers.Dense(3, activation="softmax")
         ])
-        
+
         self.model.compile(optimizer='adam', 
                         loss=tf.keras.losses.CategoricalCrossentropy(), 
                         metrics=['accuracy'])
+
+        print(self.model.summary())
+
         
         print("\nModel Details: ***********************")
         print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Model Architecture Created")
         print("Hyper-parameters used are:")
         print("- Input Layer: 24 nodes")
-        print("- Hidden Layers: 48, 96, 96, 48 nodes")
+        print("- Hidden Layers: 72, 216, 216, 72 nodes")
         print("- Output Layer: 3 nodes (softmax)")
         print("- Loss Function: Categorical Cross-Entropy")
         print("- Test Size: 20%")
@@ -216,8 +208,7 @@ class CreditScorePredictor:
         print("\nTesting Model: **************")
         print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Generating prediction using selected Neural Network")
         
-        # Fit the model
-        self.model.fit(self.X_train, self.y_train, epochs=12, batch_size=20, verbose=0)
+        self.model.fit(self.X_train, self.y_train, epochs=15, batch_size=32, verbose=1)
         
         # Evaluate model
         test_loss, test_acc = self.model.evaluate(self.X_test, self.y_test, verbose=0)
@@ -233,8 +224,8 @@ class CreditScorePredictor:
         predictions = self.model.predict(self.X_test)
         
         # Convert predictions back to original labels
-        y_predicted = self.encoder.inverse_transform(predictions)
-        y_tested = self.encoder.inverse_transform(self.y_test)
+        y_predicted = self.target_encoder.inverse_transform(predictions)
+        y_tested = self.target_encoder.inverse_transform(self.y_test)
         
         data = [[y_tested[i], y_predicted[i]] for i in range(15)]
         headers = ["True Value", "Predicted Value"]
