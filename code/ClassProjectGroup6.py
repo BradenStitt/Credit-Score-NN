@@ -118,6 +118,8 @@ class CreditScorePredictor:
         self.start_time = time.time()
         
         print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Performing Data Clean Up")
+
+        # Drop columns that are not needed
         columns_to_drop = [
             'Unnamed: 0', 'Month', 'Name', 'SSN',
             'Num_Bank_Accounts', 'Num_of_Loan', 'Type_of_Loan', 
@@ -197,22 +199,29 @@ class CreditScorePredictor:
         
         print("\nBuilding Model: ***********************")
         
+        # Define features
         categorical_features = ['Occupation', 'Credit_Mix']
         numerical_features = ['Annual_Income', 'Monthly_Inhand_Salary', 'Interest_Rate','Income_to_Salary', 
                             'Outstanding_Debt', 'Monthly_Balance'
                             ]
         target = ['Credit_Score']
 
-        #added scaling here
+        # Scale numerical features
         numerical_features_scaled = self.scaler.fit_transform(self.df[numerical_features])
+        
+        # Encode categorical features
         categorical_features_scaled = self.cat_encoder.fit_transform(self.df[categorical_features]).toarray()
-    
+        
+        # Concatenate features
         self.X = np.hstack([numerical_features_scaled, categorical_features_scaled])
-    
+        
+        # Encode Target label
         self.y = self.target_encoder.fit_transform(self.df[target]).toarray()
 
+        # Split data to train and test
         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.X, self.y, test_size=0.20, random_state=42)
-        
+
+        # Neural Network Model
         self.model = keras.Sequential([
             keras.layers.Dense(24, input_dim=self.X_train.shape[1], activation='relu'),
             keras.layers.Dense(96, activation="relu"),
@@ -245,7 +254,8 @@ class CreditScorePredictor:
         
         print("\nTesting Model: **************")
         print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Generating prediction using selected Neural Network")
-        
+
+        # Train the model
         self.model.fit(self.X_train, self.y_train, epochs=50, batch_size=50, verbose=1)
         
         # Evaluate model
@@ -286,6 +296,7 @@ def main():
     predictor = CreditScorePredictor()
     
     while True:
+        #Display Menu
         print("\n*  Credit Score Prediction System")
         print("*  (1) Load data")
         print("*  (2) Process data")
