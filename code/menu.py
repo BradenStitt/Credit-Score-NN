@@ -1,3 +1,24 @@
+"""
+Title: Neural Networks in Python
+File Name: ClassProjectGroup6.py
+
+Authors: Baden Stitt, Lucia Rojo, Michael Guillory, Noah Clark
+Group: 6
+Course: CMPS 3500: Programming Languages
+Professor: Walter Morales
+Last edited: 12. 06. 24
+
+Description:
+This Python script improves a machine learning model for predicting credit scores using a neural network approach as part of CSUB's CMPS 3500 Final Project. 
+The system provides an interactive CLI for data loading, processing, model building, and testing.
+
+Our modular pipeline approach is detailed below:
+1.) Data Loading: We load the dataset from a selected CSV file.
+2.) Data Cleaning: We prepare and clean the data for the model.
+3.) Model Building: We build the neural network structure and prepare our hidden layers, epochs, and batch size.
+4.) Model Testing: We train the model and evaluate the model's accuracy.
+"""
+
 import math
 import os
 import time
