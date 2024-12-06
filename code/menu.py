@@ -41,6 +41,7 @@ class CreditScorePredictor:
         self.le = LabelEncoder()
         self.scaler = StandardScaler()  # Added a scaler for numerical features
         self.start_time = None
+        self.data_processed = False
 
     def load_data(self):
         print("\nLoading Data: ************************************")
@@ -153,6 +154,7 @@ class CreditScorePredictor:
             self.df['ID'] = self.df['ID'].astype('string')
         except Exception as e:
             self.df = None
+            self.data_processed = False
             raise ValueError("Error in processing data: " + str(e))
         
         total_rows_after_cleaning = len(self.df)
@@ -161,9 +163,14 @@ class CreditScorePredictor:
         print(f"Total Rows after cleaning is: {total_rows_after_cleaning}")
         print(f"Time to process is: {process_time:.2f} seconds")
 
+        self.data_processed = True
+
     def build_model(self):
         if self.df is None:
             print("Please load and process data first!")
+            return
+        if not self.data_processed:
+            print("Please process data first!")
             return
         
         print("\nBuilding Model: ***********************")
@@ -272,6 +279,7 @@ def main():
             try:
                 predictor.load_data()
             except Exception as e:
+                predictor.data_processed = False
                 print(f"An error occurred: {e}")
         elif choice == '2':
             try:
@@ -280,6 +288,7 @@ def main():
                 print(f"An error occurred: {e}")
                 print("Unloading Data...")
                 predictor.df = None
+                predictor.data_processed = False
         elif choice == '3':
             try:
                 predictor.build_model()
