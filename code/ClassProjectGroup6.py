@@ -2,7 +2,7 @@
 Title: Neural Networks in Python
 File Name: ClassProjectGroup6.py
 
-Authors: Braden Stitt, Lucia Rojo, Michael Guillory, Noah Clark
+Authors: Baden Stitt, Lucia Rojo, Michael Guillory, Noah Clark
 Group: 6
 Course: CMPS 3500: Programming Languages
 Professor: Walter Morales
