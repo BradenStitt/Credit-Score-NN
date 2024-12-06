@@ -188,10 +188,10 @@ class CreditScorePredictor:
         
         self.model = keras.Sequential([
             keras.layers.Dense(24, input_dim=self.X_train.shape[1], activation='relu'),
-            keras.layers.Dense(72, activation="relu"),
+            keras.layers.Dense(96, activation="relu"),
             keras.layers.Dense(216, activation="relu"),
             keras.layers.Dense(216, activation="relu"),
-            keras.layers.Dense(72, activation="relu"),
+            keras.layers.Dense(96, activation="relu"),
             keras.layers.Dense(3, activation="softmax")
         ])
 
@@ -219,7 +219,7 @@ class CreditScorePredictor:
         print("\nTesting Model: **************")
         print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Generating prediction using selected Neural Network")
         
-        self.model.fit(self.X_train, self.y_train, epochs=15, batch_size=32, verbose=1)
+        self.model.fit(self.X_train, self.y_train, epochs=50, batch_size=50, verbose=1)
         
         # Evaluate model
         test_loss, test_acc = self.model.evaluate(self.X_test, self.y_test, verbose=0)
