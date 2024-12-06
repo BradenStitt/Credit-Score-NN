@@ -44,7 +44,8 @@ def calculate_performance_multiclass(y_true, y_pred):
         'precision': precision_score(y_true, y_pred, average='macro'),
         'recall': recall_score(y_true, y_pred, average='macro'),
         'f1_score': f1_score(y_true, y_pred, average='macro'),
-        'confusion_matrix': confusion_matrix(y_true, y_pred)
+        'confusion_matrix': confusion_matrix(y_true, y_pred),
+        'RMSE Score': math.sqrt(mean_squared_error(y_true, y_pred))
     }
     return metrics
 
@@ -251,8 +252,6 @@ class CreditScorePredictor:
         test_loss, test_acc = self.model.evaluate(self.X_test, self.y_test, verbose=0)
         
         print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Model Performance Metrics:")
-        print(f"Model RMSE: {test_loss}")
-        print(f"Test Accuracy: {test_acc}")
         
         print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Size of training set: {len(self.X_train)}")
         print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Size of testing set: {len(self.X_test)}")
