@@ -105,57 +105,55 @@ class CreditScorePredictor:
 
         self.df.drop(columns=columns_to_drop, inplace=True)
         
-        
-        self.df['Annual_Income'] = self.df['Annual_Income'].str.replace('_', '').astype(float)
-        self.df.loc[self.df['Annual_Income'] > 180000, 'Annual_Income'] = pd.NA
-        self.df['Annual_Income'] = self.df.groupby('Customer_ID')['Annual_Income'].fillna(method='ffill').fillna(method='bfill')
-
         try:
+            self.df['Annual_Income'] = self.df['Annual_Income'].str.replace('_', '').astype(float)
+            self.df.loc[self.df['Annual_Income'] > 180000, 'Annual_Income'] = pd.NA
+            self.df['Annual_Income'] = self.df.groupby('Customer_ID')['Annual_Income'].fillna(method='ffill').fillna(method='bfill')
+
             self.df['Monthly_Inhand_Salary'] = self.df.groupby('Customer_ID')['Monthly_Inhand_Salary'].fillna(method='ffill').fillna(method='bfill')
+            
+            self.df.loc[self.df['Interest_Rate'] > 34, 'Interest_Rate'] = pd.NA
+            self.df['Interest_Rate'] = self.df.groupby('Customer_ID')['Interest_Rate'].transform(lambda x: x.fillna(x.median()))
+
+            self.df['Outstanding_Debt'] = self.df['Outstanding_Debt'].str.replace('_', '')
+            self.df['Outstanding_Debt'][self.df['Outstanding_Debt'].str.fullmatch('([0-9]*[.])?[0-9]+')].unique()
+            self.df['Outstanding_Debt'] = self.df.groupby('Customer_ID')['Outstanding_Debt'].fillna(method='ffill').fillna(method='bfill').astype(float)
+            
+
+            self.df['Changed_Credit_Limit'][self.df['Changed_Credit_Limit'].str.fullmatch('[+-]?([0-9]*[.])?[0-9]+')].unique()
+            self.df['Changed_Credit_Limit'][self.df['Changed_Credit_Limit'] == '_'] = np.nan
+            self.df['Changed_Credit_Limit'] = self.df.groupby('Customer_ID')['Changed_Credit_Limit'].fillna(method='ffill').fillna(method='bfill').astype(float)
+
+            temp_series = self.df['Num_of_Delayed_Payment'][self.df['Num_of_Delayed_Payment'].notnull()]
+            temp_series[~temp_series.str.isnumeric()].unique()
+            self.df['Num_of_Delayed_Payment'] = self.df['Num_of_Delayed_Payment'].str.replace('_', '').astype(float)
+            self.df['Num_of_Delayed_Payment'] = self.df.groupby('Customer_ID')['Num_of_Delayed_Payment'].fillna(method='ffill').fillna(method='bfill').astype(float)
+
+
+            self.df['Monthly_Balance'] = pd.to_numeric(self.df['Monthly_Balance'], errors='coerce')
+            self.df['Monthly_Balance'] = self.df.groupby('Customer_ID')['Monthly_Balance'].transform(lambda x: x.fillna(method='ffill').fillna(method='bfill'))
+
+            
+            self.df['Occupation'][self.df['Occupation'] == '_______'] = np.nan
+            self.df['Occupation'] = self.df.groupby('Customer_ID')['Occupation'].fillna(method='ffill').fillna(method='bfill').astype("string")
+
+            
+            self.df['Credit_Mix'][self.df['Credit_Mix'] == '_'] = np.nan
+            self.df['Credit_Mix'] = self.df.groupby('Customer_ID')['Credit_Mix'].fillna(method='ffill').fillna(method='bfill').astype("string")
+
+            self.df['Payment_Behaviour'][self.df['Payment_Behaviour'] == '!@9#%8'] = np.nan
+            self.df['Payment_Behaviour'] = self.df.groupby('Customer_ID')['Payment_Behaviour'].fillna(method='ffill').fillna(method='bfill').astype("string")
+
+            #affects how much disposable income someone actually has access to each month        
+            self.df['Income_to_Salary'] = self.df['Annual_Income'] / (self.df['Monthly_Inhand_Salary'] * 12)
+
+            self.df['Credit_Score'] = self.df['Credit_Score'].astype("string")
+
+            self.df = self.df.drop(columns='Customer_ID')
+            self.df['ID'] = self.df['ID'].astype('string')
         except Exception as e:
             self.df = None
-            print(f"Error processing 'Monthly_Inhand_Salary': {e}")
-
-        
-        self.df.loc[self.df['Interest_Rate'] > 34, 'Interest_Rate'] = pd.NA
-        self.df['Interest_Rate'] = self.df.groupby('Customer_ID')['Interest_Rate'].transform(lambda x: x.fillna(x.median()))
-
-        self.df['Outstanding_Debt'] = self.df['Outstanding_Debt'].str.replace('_', '')
-        self.df['Outstanding_Debt'][self.df['Outstanding_Debt'].str.fullmatch('([0-9]*[.])?[0-9]+')].unique()
-        self.df['Outstanding_Debt'] = self.df.groupby('Customer_ID')['Outstanding_Debt'].fillna(method='ffill').fillna(method='bfill').astype(float)
-        
-
-        self.df['Changed_Credit_Limit'][self.df['Changed_Credit_Limit'].str.fullmatch('[+-]?([0-9]*[.])?[0-9]+')].unique()
-        self.df['Changed_Credit_Limit'][self.df['Changed_Credit_Limit'] == '_'] = np.nan
-        self.df['Changed_Credit_Limit'] = self.df.groupby('Customer_ID')['Changed_Credit_Limit'].fillna(method='ffill').fillna(method='bfill').astype(float)
-
-        temp_series = self.df['Num_of_Delayed_Payment'][self.df['Num_of_Delayed_Payment'].notnull()]
-        temp_series[~temp_series.str.isnumeric()].unique()
-        self.df['Num_of_Delayed_Payment'] = self.df['Num_of_Delayed_Payment'].str.replace('_', '').astype(float)
-        self.df['Num_of_Delayed_Payment'] = self.df.groupby('Customer_ID')['Num_of_Delayed_Payment'].fillna(method='ffill').fillna(method='bfill').astype(float)
-
-
-        self.df['Monthly_Balance'] = pd.to_numeric(self.df['Monthly_Balance'], errors='coerce')
-        self.df['Monthly_Balance'] = self.df.groupby('Customer_ID')['Monthly_Balance'].transform(lambda x: x.fillna(method='ffill').fillna(method='bfill'))
-
-        
-        self.df['Occupation'][self.df['Occupation'] == '_______'] = np.nan
-        self.df['Occupation'] = self.df.groupby('Customer_ID')['Occupation'].fillna(method='ffill').fillna(method='bfill').astype("string")
-
-        
-        self.df['Credit_Mix'][self.df['Credit_Mix'] == '_'] = np.nan
-        self.df['Credit_Mix'] = self.df.groupby('Customer_ID')['Credit_Mix'].fillna(method='ffill').fillna(method='bfill').astype("string")
-
-        self.df['Payment_Behaviour'][self.df['Payment_Behaviour'] == '!@9#%8'] = np.nan
-        self.df['Payment_Behaviour'] = self.df.groupby('Customer_ID')['Payment_Behaviour'].fillna(method='ffill').fillna(method='bfill').astype("string")
-
-        #affects how much disposable income someone actually has access to each month        
-        self.df['Income_to_Salary'] = self.df['Annual_Income'] / (self.df['Monthly_Inhand_Salary'] * 12)
-
-        self.df['Credit_Score'] = self.df['Credit_Score'].astype("string")
-
-        self.df = self.df.drop(columns='Customer_ID')
-        self.df['ID'] = self.df['ID'].astype('string')
+            raise ValueError("Error in processing data: " + str(e))
         
         total_rows_after_cleaning = len(self.df)
         process_time = time.time() - self.start_time
