@@ -206,7 +206,7 @@ class CreditScorePredictor:
         print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Model Architecture Created")
         print("Hyper-parameters used are:")
         print("- Input Layer: 24 nodes")
-        print("- Hidden Layers: 72, 216, 216, 72 nodes")
+        print("- Hidden Layers: 96, 216, 216, 96 nodes")
         print("- Output Layer: 3 nodes (softmax)")
         print("- Loss Function: Categorical Cross-Entropy")
         print("- Test Size: 20%")
