@@ -55,7 +55,7 @@ class CreditScorePredictor:
 
         data_dir = os.path.join(parent_dir, 'data')
         for filename in os.listdir(data_dir):
-            if os.path.isfile(os.path.join(data_dir, filename)):
+            if os.path.isfile(os.path.join(data_dir, filename)) and filename.endswith('.csv'):
                 files.append(filename)
 
         for i, file in enumerate(files):
@@ -71,7 +71,14 @@ class CreditScorePredictor:
         print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Loading training data set")
         
         total_columns = len(self.df.columns)
+        if len(self.df.columns) != 29:
+            self.df = None
+            raise ValueError("Data columns do not match expected columns: " + str(total_columns))
         total_rows = len(self.df)
+
+        if total_rows < 90:
+            self.df = None
+            raise ValueError("No/Insufficient data in the file: " + str(total_rows))
         
         print(f"Total Columns Read: {total_columns}")
         print(f"Total Rows Read: {total_rows}")
@@ -103,7 +110,11 @@ class CreditScorePredictor:
         self.df.loc[self.df['Annual_Income'] > 180000, 'Annual_Income'] = pd.NA
         self.df['Annual_Income'] = self.df.groupby('Customer_ID')['Annual_Income'].fillna(method='ffill').fillna(method='bfill')
 
-        self.df['Monthly_Inhand_Salary'] = self.df.groupby('Customer_ID')['Monthly_Inhand_Salary'].fillna(method='ffill').fillna(method='bfill')
+        try:
+            self.df['Monthly_Inhand_Salary'] = self.df.groupby('Customer_ID')['Monthly_Inhand_Salary'].fillna(method='ffill').fillna(method='bfill')
+        except Exception as e:
+            self.df = None
+            print(f"Error processing 'Monthly_Inhand_Salary': {e}")
 
         
         self.df.loc[self.df['Interest_Rate'] > 34, 'Interest_Rate'] = pd.NA
@@ -260,13 +271,27 @@ def main():
         choice = input("Enter your choice (1-5): ")
         
         if choice == '1':
-            predictor.load_data()
+            try:
+                predictor.load_data()
+            except Exception as e:
+                print(f"An error occurred: {e}")
         elif choice == '2':
-            predictor.process_data()
+            try:
+                predictor.process_data()
+            except Exception as e:
+                print(f"An error occurred: {e}")
+                print("Unloading Data...")
+                predictor.df = None
         elif choice == '3':
-            predictor.build_model()
+            try:
+                predictor.build_model()
+            except Exception as e:
+                print(f"An error occurred: {e}")
         elif choice == '4':
-            predictor.test_model()
+            try:
+                predictor.test_model()
+            except Exception as e:
+                print(f"An error occurred: {e}")
         elif choice == '5':
             print("Exiting the program. Goodbye!")
             break
