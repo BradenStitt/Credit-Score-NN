@@ -301,7 +301,7 @@ def main():
         print("\n*  Credit Score Prediction System")
         print("*  (1) Load data")
         print("*  (2) Process data")
-        print("*  (3) Model details")
+        print("*  (3) Train NN")
         print("*  (4) Test model")
         print("*  (5) Quit")
         
