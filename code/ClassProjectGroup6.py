@@ -16,7 +16,8 @@ Our modular pipeline approach is detailed below:
 1.) Data Loading: We load the dataset from a selected CSV file.
 2.) Data Cleaning: We prepare and clean the data for the model.
 3.) Model Building: We build the neural network structure and prepare our hidden layers, epochs, and batch size.
-4.) Model Testing: We train the model and evaluate the model's accuracy.
+    Model Testing: We train the model and evaluate the model's accuracy.
+4.) Generate Predictions: We get our predictions and make an ouput file.
 """
 
 import math
