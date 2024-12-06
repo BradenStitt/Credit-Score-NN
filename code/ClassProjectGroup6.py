@@ -302,7 +302,7 @@ def main():
         print("*  (1) Load data")
         print("*  (2) Process data")
         print("*  (3) Train NN")
-        print("*  (4) Test model")
+        print("*  (4) Generate Predictions")
         print("*  (5) Quit")
         
         choice = input("Enter your choice (1-5): ")
