@@ -347,9 +347,15 @@ def main():
                 print("Unloading Data...")
                 predictor.df = None
         elif choice == '3':
-            predictor.build_model()
+            try:
+                predictor.build_model()
+            except Exception as e:
+                print(f"An error occurred: {e}")
         elif choice == '4':
-            predictor.test_model()
+            try:
+                predictor.test_model()
+            except Exception as e:
+                print(f"An error occurred: {e}")
         elif choice == '5':
             print("Exiting the program. Goodbye!")
             break
