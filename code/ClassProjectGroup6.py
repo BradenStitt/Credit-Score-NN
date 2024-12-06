@@ -45,8 +45,8 @@ def calculate_performance_multiclass(y_true, y_pred):
         'recall': recall_score(y_true, y_pred, average='macro'),
         'f1_score': f1_score(y_true, y_pred, average='macro'),
         'confusion_matrix': confusion_matrix(y_true, y_pred),
-        'RMSE Score': math.sqrt(mean_squared_error(y_true, y_pred))
     }
+
     return metrics
 
 class CreditScorePredictor:
@@ -197,7 +197,8 @@ class CreditScorePredictor:
             print("Please process data first!")
             return
         
-        print("\nBuilding Model: ***********************")
+        print("\nTrain NN:")
+        print("***********************")
         
         # Define features
         categorical_features = ['Occupation', 'Credit_Mix']
@@ -237,49 +238,49 @@ class CreditScorePredictor:
 
         print(self.model.summary())
 
+        # Train the model
+        self.model.fit(self.X_train, self.y_train, epochs=50, batch_size=50, verbose=1)
         
-        print("\nModel Details: ***********************")
-        print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Model Architecture Created")
-        print("Hyper-parameters used are:")
-        print("- Input Layer: 24 nodes")
-        print("- Hidden Layers: 96, 216, 216, 96 nodes")
-        print("- Output Layer: 3 nodes (softmax)")
-        print("- Loss Function: Categorical Cross-Entropy")
-        print("- Test Size: 20%")
+        # Evaluate model
+        test_loss, test_acc = self.model.evaluate(self.X_test, self.y_test, verbose=0)
 
-    def test_model(self):
+        # Generate predictions
+        predictions = self.model.predict(self.X_test)
+
+        RMSE = math.sqrt(mean_squared_error(self.y_test, predictions))
+        print("RMSE: ", RMSE)
+        
+        # Convert predictions back to original labels
+        y_predicted = self.target_encoder.inverse_transform(predictions)
+        y_tested = self.target_encoder.inverse_transform(self.y_test)
+        
+        # Calculate performance
+        metrics = calculate_performance_multiclass(y_tested, y_predicted)
+        print(metrics)
+        
+        # print("\nModel Details: ***********************")
+        # print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Model Architecture Created")
+        # print("Hyper-parameters used are:")
+        # print("- Input Layer: 24 nodes")
+        # print("- Hidden Layers: 96, 216, 216, 96 nodes")
+        # print("- Output Layer: 3 nodes (softmax)")
+        # print("- Loss Function: Categorical Cross-Entropy")
+        # print("- Test Size: 20%")
+
+        return y_predicted
+
+    def test_model(self, y_predicted):
         if self.model is None:
             print("Please build the model first!")
             return
         
         print("\nTesting Model: **************")
         print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Generating prediction using selected Neural Network")
-
-        # Train the model
-        self.model.fit(self.X_train, self.y_train, epochs=50, batch_size=50, verbose=1)
-        
-        # Evaluate model
-        test_loss, test_acc = self.model.evaluate(self.X_test, self.y_test, verbose=0)
         
         print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Model Performance Metrics:")
         
         print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Size of training set: {len(self.X_train)}")
         print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Size of testing set: {len(self.X_test)}")
-        
-        # Generate predictions
-        predictions = self.model.predict(self.X_test)
-        
-        # Convert predictions back to original labels
-        y_predicted = self.target_encoder.inverse_transform(predictions)
-        y_tested = self.target_encoder.inverse_transform(self.y_test)
-        
-        data = [[y_tested[i], y_predicted[i]] for i in range(15)]
-        headers = ["True Value", "Predicted Value"]
-        print(tabulate(data, headers=headers, tablefmt="grid"))
-
-        # Calculate performance
-        metrics = calculate_performance_multiclass(y_tested, y_predicted)
-        print(metrics)
 
         # Save predictions to CSV
         # Use train_test_split indices to match the predictions with original IDs
@@ -322,12 +323,12 @@ def main():
                 predictor.data_processed = False
         elif choice == '3':
             try:
-                predictor.build_model()
+                y_predicted = predictor.build_model()
             except Exception as e:
                 print(f"An error occurred: {e}")
         elif choice == '4':
             try:
-                predictor.test_model()
+                predictor.test_model(y_predicted)
             except Exception as e:
                 print(f"An error occurred: {e}")
         elif choice == '5':
